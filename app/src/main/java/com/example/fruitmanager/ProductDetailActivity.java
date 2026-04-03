@@ -11,6 +11,7 @@ import com.example.fruitmanager.database.AppDatabase;
 import com.example.fruitmanager.model.Order;
 import com.example.fruitmanager.model.OrderDetail;
 import com.example.fruitmanager.model.Product;
+import com.example.fruitmanager.model.User;
 import com.example.fruitmanager.util.SessionManager;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -61,7 +62,30 @@ public class ProductDetailActivity extends AppCompatActivity {
 
     private void addToCart() {
         int userId = session.getUserId();
-        int quantity = Integer.parseInt(etQuantity.getText().toString());
+        
+        // Validate user existence to avoid Foreign Key constraint failure
+        User user = db.userDao().getUserById(userId);
+        if (user == null) {
+            session.logout();
+            Toast.makeText(this, "Session expired, please login again", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
+        if (product == null) {
+            Toast.makeText(this, "Product not found", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        int quantity;
+        try {
+            quantity = Integer.parseInt(etQuantity.getText().toString());
+            if (quantity <= 0) throw new NumberFormatException();
+        } catch (NumberFormatException e) {
+            Toast.makeText(this, "Please enter a valid quantity", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
         Order pendingOrder = db.orderDao().getPendingOrderByUser(userId);
         long orderId;
@@ -79,7 +103,6 @@ public class ProductDetailActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Added to cart", Toast.LENGTH_SHORT).show();
         
-        // Show Checkout Option
         Intent intent = new Intent(this, CheckoutActivity.class);
         intent.putExtra("ORDER_ID", (int) orderId);
         startActivity(intent);
