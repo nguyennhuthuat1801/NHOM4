@@ -1,4 +1,4 @@
-package com.example.myapplication;
+package com.example.fruitmanager;
 
 import org.junit.Test;
 
